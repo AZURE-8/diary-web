@@ -1,8 +1,16 @@
 package com.diaryweb.demo.service;
 
-import com.diaryweb.demo.entity.*;
-import com.diaryweb.demo.repository.*;
+import com.diaryweb.demo.common.BizException;
+import com.diaryweb.demo.entity.Achievement;
+import com.diaryweb.demo.entity.User;
+import com.diaryweb.demo.entity.UserAchievement;
+import com.diaryweb.demo.entity.UserExperience;
+import com.diaryweb.demo.repository.AchievementRepository;
+import com.diaryweb.demo.repository.UserAchievementRepository;
+import com.diaryweb.demo.repository.UserExperienceRepository;
+import com.diaryweb.demo.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,18 +33,27 @@ public class ExperienceService {
         this.userAchievementRepository = userAchievementRepository;
     }
 
-    // 经验规则：每 100 exp 升 1 级（简单可解释）
+    // 经验规则：每 100 exp 升 1 级
     private int calcLevel(int exp) {
         return Math.max(1, exp / 100 + 1);
     }
 
-    // 统一入口：给某用户加经验 + 检查成就
+    /**
+     * 第四天强化：
+     * - 参数校验
+     * - 事务保证：经验增加与成就解锁一致性
+     * - 幂等：成就不会重复插入
+     * - 性能：先筛选 eligible achievements（如你 repository 支持），否则 fallback findAll
+     */
+    @Transactional
     public void award(Long userId, int deltaExp, String reason) {
-        if (deltaExp <= 0) return;
+        if (userId == null) throw BizException.badRequest("userId 不能为空");
+        if (deltaExp <= 0) return; // deltaExp 不合法直接忽略即可（避免把系统搞乱）
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
+                .orElseThrow(() -> BizException.notFound("用户不存在"));
 
+        // user_experience 以 userId 为主键（你原实现是 findById(userId)，这里沿用）
         UserExperience ux = userExperienceRepository.findById(userId).orElse(null);
         if (ux == null) {
             ux = new UserExperience();
@@ -51,11 +68,13 @@ public class ExperienceService {
 
         userExperienceRepository.save(ux);
 
-        // 解锁成就：根据 expThreshold（最简单版本）
+        // 解锁成就：最稳妥版本（你现阶段规模不大，直接遍历）
         List<Achievement> all = achievementRepository.findAll();
         for (Achievement a : all) {
             Integer threshold = a.getExpThreshold();
-            if (threshold != null && newExp >= threshold) {
+            if (threshold == null) continue;
+
+            if (newExp >= threshold) {
                 boolean already = userAchievementRepository.existsByUserIdAndAchievementId(userId, a.getId());
                 if (!already) {
                     UserAchievement ua = new UserAchievement();
