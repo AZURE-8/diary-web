@@ -37,6 +37,10 @@ public class DiaryService {
         this.experienceService = experienceService;
         this.exchangeService = exchangeService;
     }
+    
+    public Long currentUserId() {
+        return currentUser().getId();
+    }
 
     // 获取当前登录用户（JWT/Basic Auth 都适用：Authentication.getName() 是 username）
     private User currentUser() {
@@ -56,7 +60,7 @@ public class DiaryService {
     }
 
     // =========================
-    // 1) 日记详情（第四天必须新增）
+    // 1) 日记详情
     // =========================
     /**
      * 获取日记详情（统一权限入口）

@@ -61,24 +61,24 @@ public class StorageService {
 
             String filename = UUID.randomUUID() + (ext.isEmpty() ? guessExtByContentType(contentType) : ext);
 
-            Path dir = Paths.get(uploadDir);
+            Path dir = Paths.get(uploadDir).toAbsolutePath().normalize();
             Files.createDirectories(dir);
 
             Path target = dir.resolve(filename).normalize();
 
-            // 保险：确保目标路径在 uploadDir 内
-            if (!target.startsWith(dir.normalize())) {
+            // 防止路径穿越
+            if (!target.startsWith(dir)) {
                 throw BizException.badRequest("非法文件路径");
             }
 
+            // 用绝对路径写入，避免写到 Tomcat 临时目录
             file.transferTo(target.toFile());
 
+            // 返回可访问 URL
             String relative = "/uploads/" + filename;
-            if (publicBaseUrl == null || publicBaseUrl.isBlank()) {
-                return relative; // 返回相对路径
-            }
-            // 返回完整路径（方便前端直接显示）
+            if (publicBaseUrl == null || publicBaseUrl.isBlank()) return relative;
             return publicBaseUrl + relative;
+
         } catch (BizException e) {
             throw e;
         } catch (Exception e) {

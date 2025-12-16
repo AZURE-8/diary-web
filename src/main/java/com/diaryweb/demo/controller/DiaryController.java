@@ -13,6 +13,9 @@ import com.diaryweb.demo.dto.PageResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import com.diaryweb.demo.repository.CommentRepository;
+import com.diaryweb.demo.dto.DiaryDetailDTO;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Set;
@@ -24,13 +27,16 @@ public class DiaryController {
     private final DiaryService diaryService;
     private final StorageService storageService;
     private final DiaryLikeRepository diaryLikeRepository;
-
+    private final CommentRepository commentRepository;
+    
     public DiaryController(DiaryService diaryService,
                            StorageService storageService,
-                           DiaryLikeRepository diaryLikeRepository) {
+                           DiaryLikeRepository diaryLikeRepository,
+                           CommentRepository commentRepository) {
         this.diaryService = diaryService;
         this.storageService = storageService;
         this.diaryLikeRepository = diaryLikeRepository;
+        this.commentRepository = commentRepository;
     }
 
     public static class CreateDiaryRequest {
@@ -192,6 +198,32 @@ public class DiaryController {
                 : Sort.Direction.DESC;
 
         return Sort.by(direction, field);
+    }
+    
+
+    @GetMapping("/{diaryId}/detail")
+    public ApiResponse<DiaryDetailDTO> detail(@PathVariable Long diaryId) {
+
+    // 1) 取出 diary（Service 内部完成可见性权限控制）
+    Diary diary = diaryService.getDiaryDetail(diaryId);
+
+    // 2) 统计点赞数（DTO from 需要）
+    long likeCount = diaryLikeRepository.countByDiaryId(diary.getId());
+    DiaryDTO diaryDTO = DiaryDTO.from(diary, likeCount);
+
+    // 3) 当前用户
+    String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    boolean editable = diary.getUser() != null && diary.getUser().getUsername().equals(username);
+
+    // 4) 是否点赞过（liked）
+    Long meId = diaryService.currentUserId(); // 如果你没有这个方法，可以在 service 增加一个，见下方说明
+    boolean liked = diaryLikeRepository.existsByDiaryIdAndUserId(diary.getId(), meId);
+
+    // 5) 评论数
+    long commentCount = commentRepository.countByDiaryId(diary.getId());
+
+    DiaryDetailDTO detail = new DiaryDetailDTO(diaryDTO, liked, commentCount, editable);
+    return ApiResponse.ok(detail);
     }
 
 }
