@@ -28,12 +28,18 @@ public class ExchangeController {
     }
 
     // 返回 DTO（避免返回 Entity 导致 user/diary 嵌套）
+ // src/main/java/com/diaryweb/demo/controller/ExchangeController.java
+
     public static class ExchangeDTO {
         public Long id;
         public Long requesterId;
+        public String requesterName;       // 新增：发起者用户名
         public Long targetId;
+        public String targetName;          // 新增：接收者用户名
         public Long requesterDiaryId;
+        public String requesterDiaryTitle; // 新增：发起者日记标题
         public Long targetDiaryId;
+        public String targetDiaryTitle;    // 新增：接收者日记标题（接受后才有）
         public String status;
         public LocalDateTime createdAt;
         public LocalDateTime updatedAt;
@@ -41,10 +47,31 @@ public class ExchangeController {
         public static ExchangeDTO from(DiaryExchange ex) {
             ExchangeDTO dto = new ExchangeDTO();
             dto.id = ex.getId();
-            dto.requesterId = ex.getRequester() == null ? null : ex.getRequester().getId();
-            dto.targetId = ex.getTarget() == null ? null : ex.getTarget().getId();
-            dto.requesterDiaryId = ex.getRequesterDiary() == null ? null : ex.getRequesterDiary().getId();
-            dto.targetDiaryId = ex.getTargetDiary() == null ? null : ex.getTargetDiary().getId();
+            
+            // 提取发起者信息
+            if (ex.getRequester() != null) {
+                dto.requesterId = ex.getRequester().getId();
+                dto.requesterName = ex.getRequester().getUsername();
+            }
+            
+            // 提取接收者信息
+            if (ex.getTarget() != null) {
+                dto.targetId = ex.getTarget().getId();
+                dto.targetName = ex.getTarget().getUsername();
+            }
+
+            // 提取发起者的日记信息
+            if (ex.getRequesterDiary() != null) {
+                dto.requesterDiaryId = ex.getRequesterDiary().getId();
+                dto.requesterDiaryTitle = ex.getRequesterDiary().getTitle();
+            }
+
+            // 提取接收者的日记信息（回礼）
+            if (ex.getTargetDiary() != null) {
+                dto.targetDiaryId = ex.getTargetDiary().getId();
+                dto.targetDiaryTitle = ex.getTargetDiary().getTitle();
+            }
+
             dto.status = ex.getStatus() == null ? null : ex.getStatus().name();
             dto.createdAt = ex.getCreatedAt();
             dto.updatedAt = ex.getUpdatedAt();

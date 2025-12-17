@@ -278,18 +278,20 @@ public class DiaryService {
     // 11) 分页：公开日记关键字搜索
     // =========================
     public Page<Diary> pagePublicByKeyword(String keyword, Pageable pageable) {
-        if (keyword == null || keyword.isBlank()) {
+        /*if (keyword == null || keyword.isBlank()) {
             throw BizException.badRequest("keyword 不能为空");
-        }
+        }*/
         if (pageable == null) {
             throw BizException.badRequest("pageable 不能为空");
         }
 
         String kw = keyword.trim();
 
-        return diaryRepository.findByVisibilityAndTitleContainingIgnoreCaseOrVisibilityAndContentContainingIgnoreCase(
-                Visibility.PUBLIC, kw,
-                Visibility.PUBLIC, kw,
+        return diaryRepository.findByVisibilityInAndTitleContainingIgnoreCaseOrVisibilityInAndContentContainingIgnoreCase(
+        		List.of(Visibility.PUBLIC, Visibility.SEMI_PRIVATE), 
+                kw,
+                List.of(Visibility.PUBLIC, Visibility.SEMI_PRIVATE), 
+                kw,
                 pageable
         );
     }

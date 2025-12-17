@@ -23,6 +23,12 @@ public class Question {
     private boolean anonymous = true;
 
     private LocalDateTime createdAt;
+    
+ // src/main/java/com/diaryweb/demo/entity/Question.java
+    @OneToMany(mappedBy = "question", fetch = FetchType.LAZY)
+    private java.util.List<Answer> answers; 
+
+    public java.util.List<Answer> getAnswers() { return answers; }
 
     // getters/setters
     public Long getId() { return id; }
@@ -36,4 +42,5 @@ public class Question {
     public void setContent(String content) { this.content = content; }
     public void setAnonymous(boolean anonymous) { this.anonymous = anonymous; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    
 }

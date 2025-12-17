@@ -28,9 +28,9 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
     Page<Diary> findByVisibilityAndTags_Name(Visibility visibility, String tagName, Pageable pageable);
 
     // 关键字搜索（标题/内容，公开日记）
-    Page<Diary> findByVisibilityAndTitleContainingIgnoreCaseOrVisibilityAndContentContainingIgnoreCase(
-            Visibility v1, String titleKeyword,
-            Visibility v2, String contentKeyword,
+    Page<Diary> findByVisibilityInAndTitleContainingIgnoreCaseOrVisibilityInAndContentContainingIgnoreCase(
+    		List<Visibility> v1, String titleKeyword,
+    		List<Visibility> v2, String contentKeyword,
             Pageable pageable
     );
 
