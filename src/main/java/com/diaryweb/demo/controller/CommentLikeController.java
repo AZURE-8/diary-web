@@ -62,9 +62,15 @@ public class CommentLikeController {
         long count = service.unlike(diaryId);
         return ApiResponse.ok(count);
     }
+    
+ // 在 demo/controller/CommentLikeController.java 中添加以下方法
 
-    @GetMapping("/{diaryId}/likes/count")
-    public ApiResponse<Long> likeCount(@PathVariable Long diaryId) {
-        return ApiResponse.ok(service.likeCount(diaryId));
+    // [新增] 删除评论接口
+    // 最终路径: DELETE /api/diaries/comments/{commentId}
+    @DeleteMapping("/comments/{commentId}")
+    public ApiResponse<String> deleteComment(@PathVariable Long commentId) {
+        service.deleteComment(commentId);
+        return ApiResponse.ok("deleted");
     }
+
 }

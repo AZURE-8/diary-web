@@ -22,8 +22,6 @@ public class DiaryService {
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
     private final ExperienceService experienceService;
-
-    // ✅ 第四天新增：用于 SEMI_PRIVATE 可见性校验
     private final ExchangeService exchangeService;
 
     public DiaryService(DiaryRepository diaryRepository,
@@ -42,18 +40,15 @@ public class DiaryService {
         return currentUser().getId();
     }
 
-    // 获取当前登录用户（JWT/Basic Auth 都适用：Authentication.getName() 是 username）
     private User currentUser() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getName() == null || auth.getName().isBlank()) {
-            // 更合理：未登录
             throw new BizException(4010, "未登录或认证信息缺失");
         }
 
         String username = auth.getName();
         User u = userRepository.findByUsername(username);
         if (u == null) {
-            // 更合理：认证用户不存在
             throw new BizException(4010, "用户不存在或已被删除");
         }
         return u;
@@ -62,15 +57,6 @@ public class DiaryService {
     // =========================
     // 1) 日记详情
     // =========================
-    /**
-     * 获取日记详情（统一权限入口）
-     * 规则：
-     * - 作者本人：任意可见性都可查看
-     * - 非作者：
-     *   - PUBLIC：可查看
-     *   - PRIVATE：禁止
-     *   - SEMI_PRIVATE：仅在与作者交换成功（ACCEPTED）后可查看
-     */
     public Diary getDiaryDetail(Long diaryId) {
         if (diaryId == null) {
             throw BizException.badRequest("diaryId 不能为空");
@@ -114,7 +100,7 @@ public class DiaryService {
     }
 
     // =========================
-    // 2) 创建日记（支持标签 + 可见性）
+    // 2) 创建日记
     // =========================
     public Diary createDiary(String title, String content, String imageUrl,
                              Visibility visibility, Set<String> tagNames) {
@@ -134,20 +120,16 @@ public class DiaryService {
         diary.setCreatedAt(LocalDateTime.now());
         diary.setUpdatedAt(LocalDateTime.now());
 
-        // 标签：不存在就创建，存在就复用
         diary.setTags(buildTags(tagNames));
 
-        // ① 保存日记
         Diary savedDiary = diaryRepository.save(diary);
-
-        // ② 保存成功后加经验
         experienceService.award(me.getId(), 3, "CREATE_DIARY");
 
         return savedDiary;
     }
 
     // =========================
-    // 3) 查看“我的”所有日记（包括 PRIVATE）
+    // 3) 查看“我的”所有日记
     // =========================
     public List<Diary> listMyDiaries() {
         User me = currentUser();
@@ -155,7 +137,7 @@ public class DiaryService {
     }
 
     // =========================
-    // 4) 查看指定用户的公开日记（别人只能看 PUBLIC）
+    // 4) 查看指定用户的公开日记
     // =========================
     public List<Diary> listUserPublicDiaries(Long userId) {
         if (userId == null) {
@@ -165,7 +147,7 @@ public class DiaryService {
     }
 
     // =========================
-    // 5) 更新日记（仅作者）
+    // 5) 更新日记
     // =========================
     public Diary updateDiary(Long diaryId, String title, String content,
                              Visibility visibility, Set<String> tagNames) {
@@ -179,7 +161,6 @@ public class DiaryService {
         Diary diary = diaryRepository.findById(diaryId)
                 .orElseThrow(() -> BizException.notFound("日记不存在"));
 
-        // 强制作者校验
         if (diary.getUser() == null || diary.getUser().getId() == null
                 || !diary.getUser().getId().equals(me.getId())) {
             throw BizException.forbidden("无权限修改他人日记");
@@ -195,7 +176,6 @@ public class DiaryService {
         if (content != null) diary.setContent(content);
         if (visibility != null) diary.setVisibility(visibility);
 
-        // 更新标签（如果传了 tagNames，就用新的标签集合覆盖旧的）
         if (tagNames != null) {
             diary.setTags(buildTags(tagNames));
         }
@@ -205,7 +185,7 @@ public class DiaryService {
     }
 
     // =========================
-    // 6) 删除日记（仅作者）
+    // 6) 删除日记
     // =========================
     public void deleteDiary(Long diaryId) {
 
@@ -218,7 +198,6 @@ public class DiaryService {
         Diary diary = diaryRepository.findById(diaryId)
                 .orElseThrow(() -> BizException.notFound("日记不存在"));
 
-        // 强制作者校验
         if (diary.getUser() == null || diary.getUser().getId() == null
                 || !diary.getUser().getId().equals(me.getId())) {
             throw BizException.forbidden("无权限删除他人日记");
@@ -227,15 +206,6 @@ public class DiaryService {
         diaryRepository.delete(diary);
     }
 
-    // =========================
-    // 7) 按标签搜索公开日记（发现页）
-    // =========================
-    public List<Diary> searchPublicByTag(String tagName) {
-        if (tagName == null || tagName.isBlank()) {
-            throw BizException.badRequest("tag 不能为空");
-        }
-        return diaryRepository.findByVisibilityAndTags_Name(Visibility.PUBLIC, tagName.trim());
-    }
 
     // =========================
     // 8) 分页：我的日记
@@ -248,48 +218,41 @@ public class DiaryService {
         return diaryRepository.findByUserId(me.getId(), pageable);
     }
 
+ // 在 DiaryService.java 中找到原有的 pageUserPublicDiaries 方法，替换为：
+
     // =========================
-    // 9) 分页：某用户公开日记
+    // 9) 分页：某用户公开日记 (支持搜索)
     // =========================
-    public Page<Diary> pageUserPublicDiaries(Long userId, Pageable pageable) {
+    public Page<Diary> pageUserPublicDiaries(Long userId, String keyword, Pageable pageable) {
         if (userId == null) {
             throw BizException.badRequest("userId 不能为空");
         }
         if (pageable == null) {
             throw BizException.badRequest("pageable 不能为空");
         }
-        return diaryRepository.findByUserIdAndVisibility(userId, Visibility.PUBLIC, pageable);
+        
+        // 如果没有关键词，走原有的查询（性能稍好）
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return diaryRepository.findByUserIdAndVisibility(userId, Visibility.PUBLIC, pageable);
+        } else {
+            // 如果有关键词，走新增的搜索查询
+            return diaryRepository.searchUserPublicDiaries(userId, Visibility.PUBLIC, keyword.trim(), pageable);
+        }
     }
 
-    // =========================
-    // 10) 分页：公开日记按标签
-    // =========================
-    public Page<Diary> pagePublicByTag(String tag, Pageable pageable) {
-        if (tag == null || tag.isBlank()) {
-            throw BizException.badRequest("tag 不能为空");
-        }
-        if (pageable == null) {
-            throw BizException.badRequest("pageable 不能为空");
-        }
-        return diaryRepository.findByVisibilityAndTags_Name(Visibility.PUBLIC, tag.trim(), pageable);
-    }
 
     // =========================
-    // 11) 分页：公开日记关键字搜索
+    // 11) 分页：全能搜索（标题/内容/作者/标签，公开 + 半私密）
     // =========================
     public Page<Diary> pagePublicByKeyword(String keyword, Pageable pageable) {
-        /*if (keyword == null || keyword.isBlank()) {
-            throw BizException.badRequest("keyword 不能为空");
-        }*/
         if (pageable == null) {
             throw BizException.badRequest("pageable 不能为空");
         }
 
-        String kw = keyword.trim();
+        String kw = (keyword == null) ? "" : keyword.trim();
 
-        return diaryRepository.findByVisibilityInAndTitleContainingIgnoreCaseOrVisibilityInAndContentContainingIgnoreCase(
-        		List.of(Visibility.PUBLIC, Visibility.SEMI_PRIVATE), 
-                kw,
+        // 调用 searchDiaries 并传入 PUBLIC 和 SEMI_PRIVATE
+        return diaryRepository.searchDiaries(
                 List.of(Visibility.PUBLIC, Visibility.SEMI_PRIVATE), 
                 kw,
                 pageable
@@ -297,7 +260,7 @@ public class DiaryService {
     }
 
     // =========================
-    // 工具方法：标签集合构建（复用）
+    // 工具方法：标签集合构建
     // =========================
     private Set<Tag> buildTags(Set<String> tagNames) {
         Set<Tag> tags = new HashSet<>();

@@ -78,24 +78,6 @@ public class DiaryController {
         return ApiResponse.ok(DiaryDTO.from(saved, likeCount));
     }
 
-    @GetMapping("/mine")
-    public ApiResponse<List<DiaryDTO>> mine() {
-        List<Diary> diaries = diaryService.listMyDiaries();
-        List<DiaryDTO> dtoList = diaries.stream()
-                .map(d -> DiaryDTO.from(d, diaryLikeRepository.countByDiaryId(d.getId())))
-                .toList();
-        return ApiResponse.ok(dtoList);
-    }
-
-    @GetMapping("/{userId}")
-    public ApiResponse<List<DiaryDTO>> listUserPublic(@PathVariable Long userId) {
-        List<Diary> diaries = diaryService.listUserPublicDiaries(userId);
-        List<DiaryDTO> dtoList = diaries.stream()
-                .map(d -> DiaryDTO.from(d, diaryLikeRepository.countByDiaryId(d.getId())))
-                .toList();
-        return ApiResponse.ok(dtoList);
-    }
-
     @PutMapping("/{diaryId}")
     public ApiResponse<DiaryDTO> update(@PathVariable Long diaryId, @RequestBody UpdateDiaryRequest req) {
         Diary updated = diaryService.updateDiary(diaryId, req.title, req.content, req.visibility, req.tags);
@@ -109,14 +91,6 @@ public class DiaryController {
         return ApiResponse.ok("deleted");
     }
 
-    @GetMapping("/public/searchByTag")
-    public ApiResponse<List<DiaryDTO>> searchPublicByTag(@RequestParam String tag) {
-        List<Diary> diaries = diaryService.searchPublicByTag(tag);
-        List<DiaryDTO> dtoList = diaries.stream()
-                .map(d -> DiaryDTO.from(d, diaryLikeRepository.countByDiaryId(d.getId())))
-                .toList();
-        return ApiResponse.ok(dtoList);
-    }
     
     @GetMapping("/mine/page")
     public ApiResponse<PageResponse<DiaryDTO>> minePage(
@@ -134,15 +108,19 @@ public class DiaryController {
         return ApiResponse.ok(dtoPage);
     }
     
+ // 找到 userPublicPage 方法，替换为：
+
     @GetMapping("/{userId}/page")
     public ApiResponse<PageResponse<DiaryDTO>> userPublicPage(
             @PathVariable Long userId,
+            @RequestParam(required = false) String keyword, // [新增]
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt,desc") String sort
     ) {
         Sort s = parseSort(sort);
-        Page<Diary> p = diaryService.pageUserPublicDiaries(userId, PageRequest.of(page, size, s));
+        // 调用 Service 的新签名方法
+        Page<Diary> p = diaryService.pageUserPublicDiaries(userId, keyword, PageRequest.of(page, size, s));
 
         PageResponse<DiaryDTO> dtoPage = PageResponse.of(
                 p.map(d -> DiaryDTO.from(d, diaryLikeRepository.countByDiaryId(d.getId())))
@@ -151,22 +129,6 @@ public class DiaryController {
         return ApiResponse.ok(dtoPage);
     }
 
-    @GetMapping("/public/searchByTag/page")
-    public ApiResponse<PageResponse<DiaryDTO>> publicByTagPage(
-            @RequestParam String tag,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort
-    ) {
-        Sort s = parseSort(sort);
-        Page<Diary> p = diaryService.pagePublicByTag(tag, PageRequest.of(page, size, s));
-
-        PageResponse<DiaryDTO> dtoPage = PageResponse.of(
-                p.map(d -> DiaryDTO.from(d, diaryLikeRepository.countByDiaryId(d.getId())))
-        );
-
-        return ApiResponse.ok(dtoPage);
-    }
 
     @GetMapping("/public/search/page")
     public ApiResponse<PageResponse<DiaryDTO>> publicSearchPage(
