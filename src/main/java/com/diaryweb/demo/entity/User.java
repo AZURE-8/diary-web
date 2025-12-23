@@ -17,53 +17,37 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * 用户名（唯一，用于登录）
-     */
+    //用户名
     @Column(nullable = false, unique = true)
     private String username;
 
-    /**
-     * 存储 BCrypt 加密后的密码
-     */
+    //存储加密后的密码
     @Column(nullable = false)
     private String password;
 
-    /**
-     * 邮箱（唯一，可用于找回密码 / 社交登录绑定）
-     */
+    //邮箱
     @Column(unique = true)
     private String email;
 
-    /**
-     * 用户头像地址（本地路径或 URL）
-     */
+    //用户头像地址
     private String avatarUrl;
 
-    /**
-     * 账号创建时间
-     */
+    //账号创建时间
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    /**
-     * 最近一次更新时间
-     */
+    //最近一次更新时间
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    /**
-     * 实体持久化前自动设置时间
-     */
+    //实体持久化前自动设置时间
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
 
-    /**
-     * 实体更新前自动更新时间
-     */
+    //实体更新前自动更新时间
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
@@ -72,7 +56,7 @@ public class User {
     @Column(length = 500)
     private String bio;
 
-    // ===================== Getter & Setter =====================
+    // getter/setter 
 
     public Long getId() {
         return id;
@@ -90,16 +74,11 @@ public class User {
         this.username = username;
     }
 
-    /**
-     * 注意：此处只允许设置“加密后的密码”
-     */
+    //此处只允许设置加密后的密码
     public String getPassword() {
         return password;
     }
 
-    /**
-     * Service 层必须先加密再调用此方法
-     */
     public void setPassword(String password) {
         this.password = password;
     }

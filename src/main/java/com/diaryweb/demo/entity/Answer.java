@@ -14,14 +14,14 @@ public class Answer {
     @ManyToOne(optional = false)
     private Question question;
 
-    // 回答者（建议保留）
+    // 回答者
     @ManyToOne
     private User user;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    // 回答是否匿名（可选亮点）
+    // 回答是否匿名
     @Column(nullable = false)
     private boolean anonymous = true;
 

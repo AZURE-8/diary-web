@@ -38,6 +38,7 @@ public class AchievementController {
         }
     }
 
+    //成就接口
     @GetMapping("/{userId}/achievements")
     public ApiResponse<List<UserAchievementDTO>> achievements(@PathVariable Long userId) {
         List<UserAchievement> list = userAchievementRepository.findByUserId(userId);

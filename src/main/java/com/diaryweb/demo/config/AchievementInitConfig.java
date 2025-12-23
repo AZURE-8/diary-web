@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AchievementInitConfig {
 
+	//经验值成就设定
     @Bean
     public CommandLineRunner initAchievements(AchievementRepository repo) {
         return args -> {

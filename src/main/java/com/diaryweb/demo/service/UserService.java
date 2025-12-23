@@ -22,9 +22,7 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    /**
-     * 获取当前登录的用户对象
-     */
+    //获取当前登录的用户对象
     public User currentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication() == null
                 ? null
@@ -41,9 +39,7 @@ public class UserService {
         return u;
     }
 
-    /**
-     * 用户注册
-     */
+    //用户注册
     public User register(String username, String rawPassword, String email) {
         if (username == null || username.trim().isEmpty()) {
             throw BizException.badRequest("用户名不能为空");
@@ -73,9 +69,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    /**
-     * 根据用户名查找用户
-     */
+    //根据用户名查找用户
     public User findByUsername(String username) {
         if (username == null || username.trim().isEmpty()) {
             throw BizException.badRequest("username 不能为空");
@@ -85,11 +79,8 @@ public class UserService {
         return u;
     }
 
-    /**
-     * ✅ 完整资料更新接口
-     * 支持：用户名、密码、邮箱、头像、简介
-     * 只有本人可以修改自己的信息
-     */
+
+     //完整资料更新接口支持(用户名、密码、邮箱、头像、简介),只有本人可以修改自己的信息
     @Transactional
     public User updateFullProfile(Long userId, String username, String rawPassword, String email, String avatarUrl, String bio) {
         if (userId == null) {
@@ -98,7 +89,7 @@ public class UserService {
 
         User me = currentUser();
         
-        // 核心权限检查：必须是本人操作
+        // 核心权限检查,保证必须是本人操作
         if (!Objects.equals(me.getId(), userId)) {
             throw BizException.forbidden("无权限修改他人信息");
         }

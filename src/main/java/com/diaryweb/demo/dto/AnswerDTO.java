@@ -10,7 +10,6 @@ public class AnswerDTO {
     private String username;
     private LocalDateTime createdAt;
 
-    // 1. 必须显式添加无参构造函数
     public AnswerDTO() {
     }
 
@@ -32,13 +31,13 @@ public class AnswerDTO {
         return dto;
     }
 
-    // 2. 必须提供公共的 Getter 方法，否则 Jackson 无法读取属性
+    // Getter
     public Long getId() { return id; }
     public String getContent() { return content; }
     public String getUsername() { return username; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
-    // Setter (可选，但 Jackson 反序列化有时也需要)
+    // Setter
     public void setId(Long id) { this.id = id; }
     public void setContent(String content) { this.content = content; }
     public void setUsername(String username) { this.username = username; }

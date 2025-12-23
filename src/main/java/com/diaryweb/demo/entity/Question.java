@@ -11,20 +11,19 @@ public class Question {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 提问者（可为空：如果你希望真正匿名不存用户也可以；这里建议保留以便风控）
+    // 提问者
     @ManyToOne
     private User user;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    // 匿名标志：true 表示前端展示“匿名”，false 展示用户名
+    // 匿名标志
     @Column(nullable = false)
     private boolean anonymous = true;
 
     private LocalDateTime createdAt;
     
- // src/main/java/com/diaryweb/demo/entity/Question.java
     @OneToMany(mappedBy = "question", fetch = FetchType.LAZY)
     private java.util.List<Answer> answers; 
 

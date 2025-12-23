@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+//树洞提问相应接口
 @RestController
 @RequestMapping("/api/questions")
 public class QuestionsController {

@@ -18,16 +18,15 @@ public class StorageService {
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
-    // 可选：如果你想返回完整 URL，可在配置中设 app.upload.publicBaseUrl=http://localhost:8080
     @Value("${app.upload.publicBaseUrl:}")
     private String publicBaseUrl;
 
-    // 图片类型白名单（第四天：避免上传可执行脚本）
+    // 图片类型白名单
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
             "image/jpeg", "image/png", "image/webp", "image/gif"
     );
 
-    // 限制大小（例如 5MB）
+    // 限制图片大小
     private static final long MAX_SIZE_BYTES = 5L * 1024 * 1024;
 
     // 保存图片，返回可访问的 URL 路径
@@ -47,14 +46,14 @@ public class StorageService {
             // 原始文件名清洗（防止路径穿越）
             String original = StringUtils.cleanPath(file.getOriginalFilename() == null ? "" : file.getOriginalFilename());
 
-            // 扩展名（尽量保留）
+            // 扩展名
             String ext = "";
             int idx = original.lastIndexOf(".");
             if (idx >= 0 && idx < original.length() - 1) {
                 ext = original.substring(idx).toLowerCase();
             }
 
-            // 进一步限制扩展名（避免 contentType 欺骗）
+            // 进一步限制扩展名
             if (!ext.isEmpty() && !(ext.equals(".jpg") || ext.equals(".jpeg") || ext.equals(".png") || ext.equals(".webp") || ext.equals(".gif"))) {
                 throw BizException.badRequest("文件扩展名不合法");
             }
@@ -71,7 +70,7 @@ public class StorageService {
                 throw BizException.badRequest("非法文件路径");
             }
 
-            // 用绝对路径写入，避免写到 Tomcat 临时目录
+            // 用绝对路径写入
             file.transferTo(target.toFile());
 
             // 返回可访问 URL

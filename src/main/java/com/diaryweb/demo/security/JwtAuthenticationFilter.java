@@ -17,6 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+//JWT 认证过滤器
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -44,7 +45,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 String username = jwtUtil.extractUsername(token);
 
-                // 直接查数据库用户（避免依赖 UserDetailsService，从而消除循环依赖）
+                // 直接查数据库用户（消除循环依赖）
                 User u = userRepository.findByUsername(username);
                 if (u != null) {
                     UserDetails userDetails = org.springframework.security.core.userdetails.User

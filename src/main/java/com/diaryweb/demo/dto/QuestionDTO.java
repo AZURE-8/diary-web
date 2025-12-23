@@ -1,4 +1,3 @@
-// src/main/java/com/diaryweb/demo/dto/QuestionDTO.java
 package com.diaryweb.demo.dto;
 
 import com.diaryweb.demo.entity.Question;
@@ -8,9 +7,9 @@ public class QuestionDTO {
     private Long id;
     private String content;
     private String username;
-    private Long authorId; // 新增：用于判断是否是本人
+    private Long authorId; 
     private LocalDateTime createdAt;
-    private int answerCount; // 新增：用于存储回答数量
+    private int answerCount; 
 
     public static QuestionDTO from(Question q) {
         QuestionDTO dto = new QuestionDTO();
@@ -20,7 +19,7 @@ public class QuestionDTO {
         dto.username = q.isAnonymous() ? "匿名用户" : q.getUser().getUsername();
         dto.authorId = q.getUser() != null ? q.getUser().getId() : null;
 
-        // 核心：统计回答数
+        // 统计回答数
         if (q.getAnswers() != null) {
             dto.answerCount = q.getAnswers().size();
         } else {
@@ -29,7 +28,7 @@ public class QuestionDTO {
         return dto;
     }
 
-    // Getters (必须提供，Jackson 序列化需要)
+    // getters
     public Long getId() { return id; }
     public String getContent() { return content; }
     public String getUsername() { return username; }

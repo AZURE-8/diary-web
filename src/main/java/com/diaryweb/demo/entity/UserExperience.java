@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 public class UserExperience {
 
     @Id
-    private Long userId;     // 直接用 userId 做主键（一对一）
+    private Long userId;     // userId（一对一交换）
 
     @OneToOne
     @MapsId

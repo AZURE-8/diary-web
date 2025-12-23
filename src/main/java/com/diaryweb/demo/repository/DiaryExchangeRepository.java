@@ -8,15 +8,16 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
+//日记交换记录的数据访问层
 public interface DiaryExchangeRepository extends JpaRepository<DiaryExchange, Long> {
 
-    // 交换历史：我作为 requester 或 target 参与过的
+    // 交换历史：用户参与过的
     List<DiaryExchange> findByRequesterOrTarget(User requester, User target);
 
     // 交换历史（倒序）
     List<DiaryExchange> findByRequesterOrTargetOrderByUpdatedAtDesc(User requester, User target);
 
-    // 防重复：同一 requester->target 的 PENDING 是否存在
+    // 防止重复
     boolean existsByRequesterIdAndTargetIdAndStatus(Long requesterId, Long targetId, ExchangeStatus status);
 
     // 两人之间是否存在 ACCEPTED（任意方向）

@@ -1,16 +1,15 @@
 package com.diaryweb.demo.dto;
 
 import com.diaryweb.demo.entity.Diary;
-import com.diaryweb.demo.entity.Tag; // 确保引入 Tag 实体
+import com.diaryweb.demo.entity.Tag; 
 import com.diaryweb.demo.entity.Visibility;
 
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * 日记对外展示 DTO
- */
+
+ //日记对外展示 DTO
 public class DiaryDTO {
 
     private Long id;
@@ -22,11 +21,8 @@ public class DiaryDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private long likeCount;
-
-    // ✅ 新增：标签列表
     private Set<TagDTO> tags;
 
-    // ✅ 内部静态类：简化版 TagDTO
     public static class TagDTO {
         public Long id;
         public String name;
@@ -56,7 +52,6 @@ public class DiaryDTO {
         dto.likeCount = likeCount;
         dto.author = UserDTO.from(diary.getUser());
 
-        // ✅ 核心修复：填充标签数据
         if (diary.getTags() != null) {
             dto.tags = diary.getTags().stream()
                     .map(tag -> new TagDTO(tag.getId(), tag.getName()))
@@ -94,7 +89,6 @@ public class DiaryDTO {
     public long getLikeCount() { return likeCount; }
     public void setLikeCount(long likeCount) { this.likeCount = likeCount; }
 
-    // ✅ 新增 Getter/Setter
     public Set<TagDTO> getTags() { return tags; }
     public void setTags(Set<TagDTO> tags) { this.tags = tags; }
 }

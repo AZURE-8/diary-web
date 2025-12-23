@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+//日记交换业务逻辑服务层:处理发起交换、接受/拒绝交换以及查询交换历史等功能
 @Service
 public class ExchangeService {
 
@@ -38,12 +39,6 @@ public class ExchangeService {
         
     }
 
-    /**
-     * 第四天新增：判断两个人之间是否存在“交换成功”的记录（任意方向）
-     * 用于 SEMI_PRIVATE 日记可见性判断：
-     * - 作者本人可看
-     * - 对方必须与作者 exchange = ACCEPTED 才可看
-     */
     public boolean hasAcceptedExchangeBetween(Long userAId, Long userBId) {
         if (userAId == null || userBId == null) return false;
         if (userAId.equals(userBId)) return true;
@@ -51,15 +46,7 @@ public class ExchangeService {
         return exchangeRepository.existsAcceptedBetweenUsers(userAId, userBId);
     }
 
-    /**
-     * 发起交换：我(requester) -> 对方(target)，我提供 requesterDiary
-     *
-     * 规则强化（第四天）：
-     * 1) 不能给自己发起交换
-     * 2) requesterDiary 必须属于自己
-     * 3) requesterDiary 必须为 SEMI_PRIVATE
-     * 4) 防重复：如果我对同一 target 已有 PENDING 请求，禁止再次创建（可选但强烈建议）
-     */
+    //发起交换请求
     public DiaryExchange requestExchange(Long targetUserId, Long requesterDiaryId) {
         User me = currentUser();
 
@@ -89,7 +76,7 @@ public class ExchangeService {
             throw BizException.badRequest("只能用 SEMI_PRIVATE 日记发起交换");
         }
 
-        // 防重复：同一 requester->target 已有待处理交换，就不允许再发
+        // 防重复：同一交换双方已有待处理交换，就不允许再发
         boolean alreadyPending = exchangeRepository.existsByRequesterIdAndTargetIdAndStatus(
                 me.getId(), target.getId(), ExchangeStatus.PENDING
         );
@@ -108,15 +95,7 @@ public class ExchangeService {
         return exchangeRepository.save(ex);
     }
 
-    /**
-     * 接收方同意交换：提供 targetDiary
-     *
-     * 规则强化（第四天）：
-     * 1) 只有 target 才能 accept
-     * 2) 只能 PENDING -> ACCEPTED
-     * 3) targetDiary 必须属于 target 本人
-     * 4) targetDiary 必须为 SEMI_PRIVATE
-     */
+    //接受交换请求
     public DiaryExchange acceptExchange(Long exchangeId, Long targetDiaryId) {
         User me = currentUser();
 
@@ -135,7 +114,6 @@ public class ExchangeService {
             throw BizException.forbidden("无权限操作该交换");
         }
 
-        // 只能处理 PENDING
         if (ex.getStatus() != ExchangeStatus.PENDING) {
             throw BizException.badRequest("该交换已处理，不能重复操作");
         }
@@ -159,13 +137,7 @@ public class ExchangeService {
         return exchangeRepository.save(ex);
     }
 
-    /**
-     * 接收方拒绝交换
-     *
-     * 规则强化（第四天）：
-     * 1) 只有 target 才能 reject
-     * 2) 只能 PENDING -> REJECTED
-     */
+    //拒绝交换请求
     public DiaryExchange rejectExchange(Long exchangeId) {
         User me = currentUser();
 
@@ -190,11 +162,7 @@ public class ExchangeService {
         return exchangeRepository.save(ex);
     }
 
-    /**
-     * 交换历史：我参与过的全部
-     *
-     * 第四天建议（可选）：按时间倒序返回（更像产品）
-     */
+    //交换历史：用户参与过的全部
     public List<DiaryExchange> history() {
         User me = currentUser();
         return exchangeRepository.findByRequesterOrTargetOrderByUpdatedAtDesc(me, me);

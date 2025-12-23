@@ -1,5 +1,6 @@
 package com.diaryweb.demo.dto;
 
+//日记详情页的传输对象
 public class DiaryDetailDTO {
 
     private DiaryDTO diary;

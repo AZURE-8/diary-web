@@ -19,11 +19,11 @@ public class DiaryExchange {
     @ManyToOne(optional = false)
     private User target;
 
-    // 发起方提供的日记（必须是 SEMI_PRIVATE）
+    // 发起方提供的日记（必须是半私密）
     @ManyToOne(optional = false)
     private Diary requesterDiary;
 
-    // 接收方回赠的日记（同意时必须提供，必须是 SEMI_PRIVATE）
+    // 接收方回赠的日记
     @ManyToOne
     private Diary targetDiary;
 

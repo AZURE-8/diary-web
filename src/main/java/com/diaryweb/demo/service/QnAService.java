@@ -18,8 +18,8 @@ public class QnAService {
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final UserRepository userRepository;
-    private final ExperienceService experienceService; // 后面 Part 5 会实现
-
+    private final ExperienceService experienceService; 
+    
     public QnAService(QuestionRepository questionRepository,
                       AnswerRepository answerRepository,
                       UserRepository userRepository,
@@ -46,14 +46,14 @@ public class QnAService {
         User me = currentUser();
 
         Question q = new Question();
-        q.setUser(me);                  // 记录真实提问者（便于管理）
+        q.setUser(me);                  // 记录真实提问者
         q.setContent(content);
         q.setAnonymous(anonymous);
         q.setCreatedAt(LocalDateTime.now());
 
         Question saved = questionRepository.save(q);
 
-        // 提问也可以给少量经验（可选）
+        // 提问也可以给少量经验
         experienceService.award(me.getId(), 2, "ASK_QUESTION");
 
         return saved;
@@ -79,13 +79,13 @@ public class QnAService {
 
         Answer saved = answerRepository.save(a);
 
-        // 回答给经验（第二天重点）
+        // 回答给经验
         experienceService.award(me.getId(), 5, "ANSWER_QUESTION");
 
         return saved;
     }
 
-    // 查看问题列表（可用于树洞首页）
+    // 查看问题列表（用于树洞首页）
     public List<Question> listQuestions() {
         return questionRepository.findAll();
     }

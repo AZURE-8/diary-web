@@ -22,14 +22,14 @@ public class Diary {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    // 图片访问地址（存 URL/相对路径即可）
+    // 图片访问地址
     private String imageUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Visibility visibility = Visibility.PRIVATE;
 
-    // 多对多：一篇日记可有多个标签，一个标签可被多篇日记使用
+    // 一篇日记可有多个标签，一个标签也可被多篇日记使用
     @ManyToMany
     @JoinTable(
         name = "diary_tags",
@@ -41,7 +41,7 @@ public class Diary {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // getters/setters（自行补齐或用 Lombok）
+    // getters/setters
     public Long getId() { return id; }
     public User getUser() { return user; }
     public String getTitle() { return title; }

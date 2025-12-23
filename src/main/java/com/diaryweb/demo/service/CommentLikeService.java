@@ -7,7 +7,7 @@ import com.diaryweb.demo.repository.DiaryRepository;
 import com.diaryweb.demo.repository.UserRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // [新增] 必须导入
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,15 +19,18 @@ public class CommentLikeService {
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
     private final DiaryLikeRepository likeRepository;
+    private final ExchangeService exchangeService;
 
     public CommentLikeService(DiaryRepository diaryRepository,
                               UserRepository userRepository,
                               CommentRepository commentRepository,
-                              DiaryLikeRepository likeRepository) {
+                              DiaryLikeRepository likeRepository,
+                              ExchangeService exchangeService) {
         this.diaryRepository = diaryRepository;
         this.userRepository = userRepository;
         this.commentRepository = commentRepository;
         this.likeRepository = likeRepository;
+        this.exchangeService = exchangeService;
     }
 
     private User currentUser() {
@@ -37,26 +40,42 @@ public class CommentLikeService {
         return u;
     }
 
-    private Diary publicDiaryOrThrow(Long diaryId) {
+    //允许互动的条件
+    private Diary checkPermissionAndGetDiary(Long diaryId, User me) {
         Diary diary = diaryRepository.findById(diaryId)
                 .orElseThrow(() -> new RuntimeException("日记不存在"));
 
-        // 只允许对 PUBLIC 日记互动
-        if (diary.getVisibility() != Visibility.PUBLIC) {
-            throw new RuntimeException("该日记不是公开日记，不能评论/点赞");
+        //作者本人直接允许
+        if (diary.getUser().getId().equals(me.getId())) {
+            return diary;
         }
-        return diary;
+
+        //公开日记直接允许
+        if (diary.getVisibility() == Visibility.PUBLIC) {
+            return diary;
+        }
+
+        //半私密日记：检查是否交换过
+        if (diary.getVisibility() == Visibility.SEMI_PRIVATE) {
+            boolean exchanged = exchangeService.hasAcceptedExchangeBetween(me.getId(), diary.getUser().getId());
+            if (exchanged) {
+                return diary;
+            }
+        }
+
+        // 其他情况（如 PRIVATE 或未交换的 SEMI_PRIVATE），禁止
+        throw new RuntimeException("您没有权限对该日记进行互动");
     }
 
     // 添加评论
-    @Transactional // [建议] 写操作建议加上事务
+    @Transactional
     public Comment addComment(Long diaryId, String content) {
         if (content == null || content.isBlank()) {
             throw new RuntimeException("评论内容不能为空");
         }
 
         User me = currentUser();
-        Diary diary = publicDiaryOrThrow(diaryId);
+        Diary diary = checkPermissionAndGetDiary(diaryId, me);
 
         Comment c = new Comment();
         c.setDiary(diary);
@@ -72,11 +91,11 @@ public class CommentLikeService {
         return commentRepository.findByDiaryIdOrderByCreatedAtAsc(diaryId);
     }
 
-    // 点赞（幂等：重复点赞不报错，直接返回当前点赞数）
-    @Transactional // [建议] 涉及先读后写，加上事务更安全
+    // 点赞
+    @Transactional
     public long like(Long diaryId) {
         User me = currentUser();
-        Diary diary = publicDiaryOrThrow(diaryId);
+        Diary diary = checkPermissionAndGetDiary(diaryId, me);
 
         boolean exists = likeRepository.existsByDiaryIdAndUserId(diary.getId(), me.getId());
         if (!exists) {
@@ -89,11 +108,10 @@ public class CommentLikeService {
     }
 
     // 取消点赞
-    // 必须加 @Transactional，否则 JPA 执行 deleteBy... 会报“没有事务”的错误
-    @Transactional 
+    @Transactional
     public long unlike(Long diaryId) {
         User me = currentUser();
-        Diary diary = publicDiaryOrThrow(diaryId);
+        Diary diary = checkPermissionAndGetDiary(diaryId, me);
 
         likeRepository.deleteByDiaryIdAndUserId(diary.getId(), me.getId());
         return likeRepository.countByDiaryId(diary.getId());
@@ -104,9 +122,7 @@ public class CommentLikeService {
         return likeRepository.countByDiaryId(diaryId);
     }
     
- // 在 demo/service/CommentLikeService.java 中添加以下方法
-
-    // [新增] 删除评论
+    // 删除评论
     @Transactional
     public void deleteComment(Long commentId) {
         User me = currentUser();
@@ -114,7 +130,7 @@ public class CommentLikeService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("评论不存在"));
 
-        // 权限校验：只有 "评论发布者" 或 "日记作者" 可以删除
+        // 只有 "评论发布者" 或 "日记作者" 可以删除
         boolean isAuthor = comment.getUser().getId().equals(me.getId());
         boolean isDiaryOwner = comment.getDiary().getUser().getId().equals(me.getId());
 

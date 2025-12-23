@@ -1,8 +1,6 @@
 package com.diaryweb.demo.dto;
 
-/**
- * 个人中心数据传输对象
- */
+//个人中心数据传输对象
 public class UserProfileDTO {
     private UserDTO user;  // 包含基本信息（用户名、头像等）
     private int exp;       // 经验值
@@ -10,7 +8,7 @@ public class UserProfileDTO {
 
     public UserProfileDTO() {}
 
-    // Getter 和 Setter 方法
+    // Getter 和 Setter
     public UserDTO getUser() { return user; }
     public void setUser(UserDTO user) { this.user = user; }
 

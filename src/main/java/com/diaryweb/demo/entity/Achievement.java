@@ -11,7 +11,7 @@ public class Achievement {
     private Long id;
 
     @Column(unique = true, nullable = false)
-    private String code;     // 例如 FIRST_DIARY / FIRST_ANSWER
+    private String code;    
 
     @Column(nullable = false)
     private String title;
@@ -19,7 +19,7 @@ public class Achievement {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    // 解锁条件（这里用 expThreshold 做最简单可落地规则）
+    // 解锁条件
     private Integer expThreshold;
 
     // getters/setters

@@ -20,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.List;
 import java.util.Set;
 
+	//处理日记的增删改查、图片上传、分页搜索及详情查看接口
 @RestController
 @RequestMapping("/api/diaries")
 public class DiaryController {
@@ -53,13 +54,14 @@ public class DiaryController {
         public Set<String> tags;
     }
 
+    //创建纯文本日记
     @PostMapping("/create")
     public ApiResponse<DiaryDTO> create(@RequestBody CreateDiaryRequest req) {
         Diary saved = diaryService.createDiary(req.title, req.content, null, req.visibility, req.tags);
         long likeCount = diaryLikeRepository.countByDiaryId(saved.getId());
         return ApiResponse.ok(DiaryDTO.from(saved, likeCount));
     }
-
+    //创建带图片日记
     @PostMapping("/createWithImage")
     public ApiResponse<DiaryDTO> createWithImage(@RequestParam String title,
                                                  @RequestParam(required = false) String content,
@@ -78,6 +80,17 @@ public class DiaryController {
         return ApiResponse.ok(DiaryDTO.from(saved, likeCount));
     }
 
+    //获取“我”的所有日记
+    @GetMapping("/mine")
+    public ApiResponse<List<DiaryDTO>> mine() {
+        List<Diary> diaries = diaryService.listMyDiaries();
+        List<DiaryDTO> dtoList = diaries.stream()
+                .map(d -> DiaryDTO.from(d, diaryLikeRepository.countByDiaryId(d.getId())))
+                .toList();
+        return ApiResponse.ok(dtoList);
+    }
+
+    //更新日记内容
     @PutMapping("/{diaryId}")
     public ApiResponse<DiaryDTO> update(@PathVariable Long diaryId, @RequestBody UpdateDiaryRequest req) {
         Diary updated = diaryService.updateDiary(diaryId, req.title, req.content, req.visibility, req.tags);
@@ -85,13 +98,14 @@ public class DiaryController {
         return ApiResponse.ok(DiaryDTO.from(updated, likeCount));
     }
 
+    //删除日记
     @DeleteMapping("/{diaryId}")
     public ApiResponse<String> delete(@PathVariable Long diaryId) {
         diaryService.deleteDiary(diaryId);
         return ApiResponse.ok("deleted");
     }
-
     
+    //分页情况下获取日记
     @GetMapping("/mine/page")
     public ApiResponse<PageResponse<DiaryDTO>> minePage(
             @RequestParam(defaultValue = "0") int page,
@@ -108,18 +122,16 @@ public class DiaryController {
         return ApiResponse.ok(dtoPage);
     }
     
- // 找到 userPublicPage 方法，替换为：
-
+    //分页获取他人日记
     @GetMapping("/{userId}/page")
     public ApiResponse<PageResponse<DiaryDTO>> userPublicPage(
             @PathVariable Long userId,
-            @RequestParam(required = false) String keyword, // [新增]
+            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt,desc") String sort
     ) {
         Sort s = parseSort(sort);
-        // 调用 Service 的新签名方法
         Page<Diary> p = diaryService.pageUserPublicDiaries(userId, keyword, PageRequest.of(page, size, s));
 
         PageResponse<DiaryDTO> dtoPage = PageResponse.of(
@@ -129,7 +141,7 @@ public class DiaryController {
         return ApiResponse.ok(dtoPage);
     }
 
-
+    //分页在广场中搜索
     @GetMapping("/public/search/page")
     public ApiResponse<PageResponse<DiaryDTO>> publicSearchPage(
     		@RequestParam(required = false, defaultValue = "") String keyword,
@@ -146,8 +158,33 @@ public class DiaryController {
 
         return ApiResponse.ok(dtoPage);
     }
+
+    //日记详情
+    @GetMapping("/{diaryId}/detail")
+    public ApiResponse<DiaryDetailDTO> detail(@PathVariable Long diaryId) {
+
+        Diary diary = diaryService.getDiaryDetail(diaryId);
+
+        //统计点赞数
+        long likeCount = diaryLikeRepository.countByDiaryId(diary.getId());
+        DiaryDTO diaryDTO = DiaryDTO.from(diary, likeCount);
+
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        boolean editable = diary.getUser() != null && diary.getUser().getUsername().equals(username);
+
+        //是否点赞过
+        Long meId = diaryService.currentUserId(); 
+        boolean liked = diaryLikeRepository.existsByDiaryIdAndUserId(diary.getId(), meId);
+
+        //评论数
+        long commentCount = commentRepository.countByDiaryId(diary.getId());
+
+        DiaryDetailDTO detail = new DiaryDetailDTO(diaryDTO, liked, commentCount, editable);
+        return ApiResponse.ok(detail);
+    }
+    
+    //排序
     private Sort parseSort(String sort) {
-        // sort 格式：createdAt,desc 或 title,asc
         if (sort == null || sort.isBlank()) {
             return Sort.by(Sort.Direction.DESC, "createdAt");
         }
@@ -160,32 +197,6 @@ public class DiaryController {
                 : Sort.Direction.DESC;
 
         return Sort.by(direction, field);
-    }
-    
-
-    @GetMapping("/{diaryId}/detail")
-    public ApiResponse<DiaryDetailDTO> detail(@PathVariable Long diaryId) {
-
-    // 1) 取出 diary（Service 内部完成可见性权限控制）
-    Diary diary = diaryService.getDiaryDetail(diaryId);
-
-    // 2) 统计点赞数（DTO from 需要）
-    long likeCount = diaryLikeRepository.countByDiaryId(diary.getId());
-    DiaryDTO diaryDTO = DiaryDTO.from(diary, likeCount);
-
-    // 3) 当前用户
-    String username = SecurityContextHolder.getContext().getAuthentication().getName();
-    boolean editable = diary.getUser() != null && diary.getUser().getUsername().equals(username);
-
-    // 4) 是否点赞过（liked）
-    Long meId = diaryService.currentUserId(); // 如果你没有这个方法，可以在 service 增加一个，见下方说明
-    boolean liked = diaryLikeRepository.existsByDiaryIdAndUserId(diary.getId(), meId);
-
-    // 5) 评论数
-    long commentCount = commentRepository.countByDiaryId(diary.getId());
-
-    DiaryDetailDTO detail = new DiaryDetailDTO(diaryDTO, liked, commentCount, editable);
-    return ApiResponse.ok(detail);
     }
 
 }

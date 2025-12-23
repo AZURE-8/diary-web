@@ -7,11 +7,11 @@ import com.diaryweb.demo.entity.User;
 import com.diaryweb.demo.entity.UserExperience;
 import com.diaryweb.demo.repository.UserExperienceRepository;
 import com.diaryweb.demo.repository.UserRepository;
-import com.diaryweb.demo.service.StorageService; // [新增]
+import com.diaryweb.demo.service.StorageService; 
 import com.diaryweb.demo.service.UserService;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile; // [新增]
+import org.springframework.web.multipart.MultipartFile; 
 
 @RestController
 @RequestMapping("/api/users")
@@ -20,12 +20,12 @@ public class UserController {
     private final UserService userService;
     private final UserRepository userRepository;
     private final UserExperienceRepository userExperienceRepository;
-    private final StorageService storageService; // [新增] 注入存储服务
+    private final StorageService storageService; // 注入存储服务
 
     public UserController(UserService userService, 
                           UserRepository userRepository,
                           UserExperienceRepository userExperienceRepository,
-                          StorageService storageService) { // [修改] 构造函数增加 StorageService
+                          StorageService storageService) { 
         this.userService = userService;
         this.userRepository = userRepository;
         this.userExperienceRepository = userExperienceRepository;
@@ -63,15 +63,14 @@ public class UserController {
         public String bio;
     }
 
-    // [新增] 专门用于上传头像的接口
+    //用于上传头像的接口
     @PostMapping("/upload/avatar")
     public ApiResponse<String> uploadAvatar(@RequestParam("file") MultipartFile file) {
-        // 使用 StorageService 保存图片
         String url = storageService.saveImage(file);
-        // 返回图片的访问路径 (例如 /uploads/xxxx.jpg)
         return ApiResponse.ok(url);
     }
 
+    //个人信息
     @PutMapping("/{userId}")
     public ApiResponse<UserDTO> updateUser(@PathVariable Long userId, @RequestBody UpdateUserRequest req) {
         User updated = userService.updateFullProfile(userId, req.username, req.password, req.email, req.avatarUrl, req.bio);
@@ -79,7 +78,7 @@ public class UserController {
     }
     
 
-    // [新增] 获取任意用户的公开资料（用于他人主页）
+    // 获取他人的公开资料（用于他人主页）
     @GetMapping("/{userId}/public-profile")
     public ApiResponse<UserProfileDTO> getUserPublicProfile(@PathVariable Long userId) {
         User u = userRepository.findById(userId).orElse(null);
@@ -90,7 +89,7 @@ public class UserController {
         UserExperience ux = userExperienceRepository.findById(userId).orElse(null);
 
         UserProfileDTO profile = new UserProfileDTO();
-        profile.setUser(UserDTO.from(u)); // 使用 UserDTO 脱敏（不含密码）
+        profile.setUser(UserDTO.from(u)); 
         profile.setExp(ux != null ? ux.getExp() : 0);
         profile.setLevel(ux != null ? ux.getLevel() : 1);
 

@@ -13,7 +13,7 @@ public class BizException extends RuntimeException {
         return code;
     }
 
-    // 常用静态方法（可选，便于抛异常）
+    // 常用静态方法
     public static BizException badRequest(String message) {
         return new BizException(4000, message);
     }

@@ -8,7 +8,8 @@ public class Tag {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    
+    //标签名
     @Column(unique = true, nullable = false)
     private String name;
 

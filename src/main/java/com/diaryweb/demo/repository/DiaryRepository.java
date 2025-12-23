@@ -10,18 +10,18 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
+//日记数据访问层
 public interface DiaryRepository extends JpaRepository<Diary, Long> {
 
     List<Diary> findByUserId(Long userId);
     List<Diary> findByUserIdAndVisibility(Long userId, Visibility visibility);
     Page<Diary> findByUserId(Long userId, Pageable pageable);
     
-    // 原有的基础查询保留
     Page<Diary> findByUserIdAndVisibility(Long userId, Visibility visibility, Pageable pageable);
 
     Page<Diary> findByVisibility(Visibility visibility, Pageable pageable);
 
-    // 原有的全站搜索保留...
+    //全局模糊搜索(公开和半私密的标题、内容、作者用户名、标签名)
     @Query("SELECT DISTINCT d FROM Diary d " +
            "LEFT JOIN d.user u " +
            "LEFT JOIN d.tags t " +
@@ -38,7 +38,7 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
             Pageable pageable
     );
 
-    // ✅ [新增] 个人主页搜索接口：限定 User ID + 可见性 + 关键词
+    //个人主页搜索(UserID + 可见性 + 关键词)
     @Query("SELECT d FROM Diary d " +
            "WHERE d.user.id = :userId " +
            "AND d.visibility = :visibility " +

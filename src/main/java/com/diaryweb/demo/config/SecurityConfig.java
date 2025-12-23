@@ -67,10 +67,10 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
 
-            // 关键：JWT 模式不使用 Session
+            // JWT 模式不使用 Session
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-            // 关键：把 401/403 统一返回 JSON
+            // 把 401/403 统一返回 JSON
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint(restAuthEntryPoint)     // 401
                 .accessDeniedHandler(restAccessDeniedHandler)     // 403
@@ -83,7 +83,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             );
 
-        // JWT Filter：必须放在 UsernamePasswordAuthenticationFilter 前
+        // JWT Filter
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

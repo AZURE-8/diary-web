@@ -2,10 +2,7 @@ package com.diaryweb.demo.dto;
 
 import com.diaryweb.demo.entity.User;
 
-/**
- * 用户对外展示 DTO
- * 只包含安全、必要的字段
- */
+//用户对外展示 DTO
 public class UserDTO {
 
     private Long id;
@@ -23,9 +20,7 @@ public class UserDTO {
         this.bio = bio;
     }
 
-    /**
-     * Entity -> DTO 转换
-     */
+    //实体转换dto
     public static UserDTO from(User user) {
         if (user == null) {
             return null;
@@ -33,13 +28,12 @@ public class UserDTO {
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());
-        dto.setAvatarUrl(user.getAvatarUrl()); // 如果你的 User 没有这个字段，就删掉这一行
-        dto.setBio(user.getBio());             // 如果你的 User 没有这个字段，就删掉这一行
+        dto.setAvatarUrl(user.getAvatarUrl()); 
+        dto.setBio(user.getBio());             
         return dto;
     }
 
-    /* getters & setters */
-
+    // getters & setters
     public Long getId() {
         return id;
     }

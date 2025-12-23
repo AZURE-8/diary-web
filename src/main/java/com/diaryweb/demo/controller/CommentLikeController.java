@@ -22,7 +22,7 @@ public class CommentLikeController {
         public String content;
     }
 
-    // 轻量 CommentDTO：避免返回 Comment(Entity)->user->...
+    // 评论返回对象
     public static class CommentDTO {
         public Long id;
         public String content;
@@ -39,34 +39,35 @@ public class CommentLikeController {
         }
     }
 
+     //为指定日记添加评论
     @PostMapping("/{diaryId}/comment")
     public ApiResponse<CommentDTO> comment(@PathVariable Long diaryId, @RequestBody CommentRequest req) {
         Comment c = service.addComment(diaryId, req.content);
         return ApiResponse.ok(CommentDTO.from(c));
     }
 
+    //获取指定日记的所有评论列表
     @GetMapping("/{diaryId}/comments")
     public ApiResponse<List<CommentDTO>> listComments(@PathVariable Long diaryId) {
         List<Comment> list = service.listComments(diaryId);
         return ApiResponse.ok(list.stream().map(CommentDTO::from).toList());
     }
 
+    //点赞
     @PostMapping("/{diaryId}/like")
     public ApiResponse<Long> like(@PathVariable Long diaryId) {
         long count = service.like(diaryId);
         return ApiResponse.ok(count);
     }
 
+    //取消点赞
     @PostMapping("/{diaryId}/unlike")
     public ApiResponse<Long> unlike(@PathVariable Long diaryId) {
         long count = service.unlike(diaryId);
         return ApiResponse.ok(count);
     }
-    
- // 在 demo/controller/CommentLikeController.java 中添加以下方法
 
-    // [新增] 删除评论接口
-    // 最终路径: DELETE /api/diaries/comments/{commentId}
+    //删除评论接口
     @DeleteMapping("/comments/{commentId}")
     public ApiResponse<String> deleteComment(@PathVariable Long commentId) {
         service.deleteComment(commentId);

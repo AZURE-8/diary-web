@@ -42,12 +42,14 @@ public class AuthController {
         public LoginResponse(String token) { this.token = token; }
     }
 
+    //注册
     @PostMapping("/register")
     public ApiResponse<UserDTO> register(@RequestBody RegisterRequest request) {
         User u = userService.register(request.username, request.password, request.email);
         return ApiResponse.ok(UserDTO.from(u));
     }
 
+    //登录
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@RequestBody LoginRequest request) {
         Authentication auth = authenticationManager.authenticate(
